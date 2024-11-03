@@ -7,27 +7,23 @@ import {
 import renderModule from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url";
 import compileModule from "@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url";
 
-export function useRenderer() {
+export function useRenderer({
+  width = 800,
+  height = 600,
+  callback,
+}: {
+  width?: number;
+  height?: number;
+  callback: (renderer: TypstRenderer, compiler: TypstCompiler, result: Uint8Array) => void;
+}) {
   const [renderer, setRenderer] = useState<TypstRenderer | null>(null);
   const [compiler, setCompiler] = useState<TypstCompiler | null>(null);
-  const [canvas, setCanvas] = useState<OffscreenCanvas | null>(null);
-  const [ctx, setCtx] = useState<OffscreenCanvasRenderingContext2D | null>(
-    null
-  );
-  const image = useRef<ImageData | null>(null);
+  const [pixelPerPt, setPixelPerPt] = useState(2);
   const isInitialized = useRef(false);
 
   useEffect(() => {
     if (!isInitialized.current) {
       isInitialized.current = true;
-
-      const canvas = new OffscreenCanvas(800, 600);
-      const ctx = canvas.getContext("2d", {
-        willReadFrequently: true,
-      })!;
-
-      setCanvas(canvas);
-      setCtx(ctx);
 
       const renderer = createTypstRenderer();
       renderer
@@ -51,12 +47,15 @@ export function useRenderer() {
   }, []);
 
   async function render(text: string) {
-    if (!renderer || !compiler || !canvas || !ctx) return;
+    if (!renderer || !compiler) return;
 
     compiler.addSource(
       "/main.typ",
       `
-#set page(margin: 0pt)
+#set page(margin: 0pt, width: ${width / pixelPerPt}pt, height: ${
+        height / pixelPerPt
+      }pt)
+#set text(white)
 ${text}`
     );
     const { result, diagnostics } = await compiler.compile({
@@ -66,33 +65,17 @@ ${text}`
     });
     if (result) {
       if (diagnostics && diagnostics.length > 0) console.info(diagnostics);
-      ctx.clearRect(0, 0, 800, 600);
-      await renderer
-        .renderCanvas({
-          // The types are wrong in the package
-          canvas: ctx as unknown as CanvasRenderingContext2D,
-          artifactContent: result,
-          pageOffset: 0,
-          format: "vector",
-          pixelPerPt: 2,
-          backgroundColor: "#00000000",
-        })
-        .catch(console.error);
-
-      // Invert colors of the render
-      const imgData = ctx.getImageData(0, 0, 800, 600);
-
-      for (let i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i] = 255 - imgData.data[i];
-        imgData.data[i + 1] = 255 - imgData.data[i + 1];
-        imgData.data[i + 2] = 255 - imgData.data[i + 2];
-      }
-
-      image.current = imgData;
+      callback(renderer, compiler, result);
     } else {
       console.error(diagnostics);
     }
   }
 
-  return { renderer, compiler, canvas, ctx, image, render };
+  return {
+    renderer,
+    compiler,
+    pixelPerPt,
+    setPixelPerPt,
+    render,
+  };
 }
