@@ -121,7 +121,7 @@ export function SvgThing({
     }
 
     function handleScroll(event: WheelEvent) {
-      if (editing) return;
+      if (!selected || editing) return;
       event.preventDefault();
       const delta = event.deltaY;
       setPixelPerPt((prev) => prev + delta / 1000);
@@ -183,7 +183,9 @@ export function SvgThing({
 
   return (
     <div
-      className={`absolute overflow-hidden ${selected ? `outline-dashed outline-2` : ""}`}
+      className={`absolute overflow-hidden ${
+        selected ? `outline-dashed outline-2` : ""
+      }`}
       ref={outerRef}
       style={{
         top: y,
