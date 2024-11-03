@@ -122,6 +122,7 @@ export function SvgThing({
 
     function handleScroll(event: WheelEvent) {
       if (editing) return;
+      event.preventDefault();
       const delta = event.deltaY;
       setPixelPerPt((prev) => prev + delta / 1000);
     }
@@ -164,9 +165,25 @@ export function SvgThing({
     };
   }, [textRef, editing, render]);
 
+  useEffect(() => {
+    if (!selected || editing) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Delete" || event.key === "Backspace") {
+        removeElement(id);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selected, editing, id, removeElement]);
+
   return (
     <div
-      className={`absolute ${selected ? `outline-dashed outline-2` : ""}`}
+      className={`absolute overflow-hidden ${selected ? `outline-dashed outline-2` : ""}`}
       ref={outerRef}
       style={{
         top: y,
