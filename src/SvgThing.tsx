@@ -8,23 +8,25 @@ export function SvgThing({
   y: initialY = 50,
   width: initialWidth = 200,
   height: initialHeight = 100,
+  editing: initialEditing = true,
 }: {
   id: string;
   x?: number;
   y?: number;
   width?: number;
   height?: number;
+  editing?: boolean;
 }) {
-  const { selectedElement, setSelectedElement, removeElement } =
+  const { selectedElements, setSelectedElements, removeElement } =
     useEditorContext();
 
-  const selected = selectedElement === id;
+  const selected = selectedElements.includes(id);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [width, setWidth] = useState(initialWidth);
   const [height, setHeight] = useState(initialHeight);
   const [x, setX] = useState(initialX);
@@ -38,11 +40,15 @@ export function SvgThing({
   const [text, setText] = useState("");
 
   useEffect(() => {
+    if (!initialEditing) return;
+    startEditing();
+  }, []);
+
+  useEffect(() => {
     render(text);
   }, [pixelPerPt, width, height]);
 
   useEffect(() => {
-    console.log(text, selected, editing);
     if (selected) return;
     setEditing(false);
 
@@ -54,6 +60,20 @@ export function SvgThing({
     if (!editing) return;
     render(text);
   }, [editing, selected]);
+
+  function startEditing() {
+    if (editing || !selected) return;
+
+    setEditing(true);
+
+    requestAnimationFrame(() => {
+      const textarea = textRef.current;
+
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(text.length, text.length);
+    });
+  }
 
   const mouseX = useRef(0);
   const mouseY = useRef(0);
@@ -67,17 +87,14 @@ export function SvgThing({
       mouseX.current = event.clientX;
       mouseY.current = event.clientY;
       event.preventDefault();
-      setSelectedElement(id);
+      setSelectedElements([id]);
     }
 
     function handleDoubleClick(event: MouseEvent) {
-      setEditing(true);
       isResizing.current = false;
       isDragging.current = false;
       event.stopPropagation();
-      requestAnimationFrame(() => {
-        textRef.current?.focus();
-      });
+      startEditing();
     }
 
     function handleDragMouseDown(event: MouseEvent) {
@@ -145,7 +162,7 @@ export function SvgThing({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [editing, id, setPixelPerPt, setSelectedElement]);
+  }, [editing, id, setPixelPerPt, setSelectedElements]);
 
   useEffect(() => {
     const textarea = textRef.current;
@@ -169,8 +186,32 @@ export function SvgThing({
     if (!selected || editing) return;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Delete" || event.key === "Backspace") {
-        removeElement(id);
+      switch (event.key) {
+        case "Backspace":
+        case "Delete": {
+          removeElement(id);
+          break;
+        }
+        case "Enter": {
+          startEditing();
+          break;
+        }
+        case "ArrowUp": {
+          setY((prev) => prev - 1);
+          break;
+        }
+        case "ArrowDown": {
+          setY((prev) => prev + 1);
+          break;
+        }
+        case "ArrowLeft": {
+          setX((prev) => prev - 1);
+          break;
+        }
+        case "ArrowRight": {
+          setX((prev) => prev + 1);
+          break;
+        }
       }
     }
 
@@ -183,7 +224,7 @@ export function SvgThing({
 
   return (
     <div
-      className={`absolute overflow-hidden ${
+      className={`absolute overflow-hidden cursor-move ${
         selected ? `outline-dashed outline-2` : ""
       }`}
       ref={outerRef}
@@ -221,8 +262,10 @@ export function SvgThing({
           ref={resizeRef}
           className={`${
             selected ? "" : "hidden"
-          } absolute right-0 bottom-0 w-4 h-4 bg-gray-800 cursor-se-resize`}
-        />
+          } absolute right-0 bottom-0 w-5 h-5 cursor-se-resize`}
+        >
+          <div className="w-8 h-8 rotate-45 origin-center translate-x-1 translate-y-1 bg-gray-700" />
+        </div>
       </div>
     </div>
   );

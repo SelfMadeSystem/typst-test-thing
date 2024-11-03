@@ -8,6 +8,15 @@ import renderModule from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer
 import compileModule from "@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url";
 import { DiagnosticsData } from "@myriaddreamin/typst.ts/dist/esm/compiler.mjs";
 
+
+const compiler = createTypstCompiler();
+compiler
+  .init({
+    getModule: () => compileModule,
+    beforeBuild: [async () => {}], // apparently this is needed for fonts to load...? idk
+  })
+  .catch(console.error);
+
 export function useRenderer({
   width = 800,
   height = 600,
@@ -23,7 +32,6 @@ export function useRenderer({
   ) => void;
 }) {
   const [renderer, setRenderer] = useState<TypstRenderer | null>(null);
-  const [compiler, setCompiler] = useState<TypstCompiler | null>(null);
   const [pixelPerPt, setPixelPerPt] = useState(2);
   const isInitialized = useRef(false);
 
@@ -39,16 +47,6 @@ export function useRenderer({
         .catch(console.error);
 
       setRenderer(renderer);
-
-      const compiler = createTypstCompiler();
-      compiler
-        .init({
-          getModule: () => compileModule,
-          beforeBuild: [async () => {}], // apparently this is needed for fonts to load...? idk
-        })
-        .catch(console.error);
-
-      setCompiler(compiler);
     }
   }, []);
 

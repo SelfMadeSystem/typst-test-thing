@@ -29,7 +29,16 @@ export function useSvgRenderer({
           artifactContent: result,
           format: "vector",
         })
-        .catch(console.error);
+        .catch((e) => {
+          if (
+            e instanceof Error &&
+            e.message ===
+              "attempted to take ownership of Rust value while it was borrowed"
+          ) {
+            return;
+          }
+          console.log(e);
+        });
     } else if (diagnostics) {
       container.current!.innerHTML = "";
 

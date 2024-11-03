@@ -2,16 +2,16 @@ import { createContext, useContext } from "react";
 
 export type EditorContextType = {
   elements: [string, JSX.Element][];
-  selectedElement: string | null;
-  setSelectedElement: (id: string | null) => void;
+  selectedElements: string[];
+  setSelectedElements: (id: string[]) => void;
   addElement: (id: string, element: JSX.Element) => void;
   removeElement: (id: string) => void;
 };
 
 export const EditorContext = createContext<EditorContextType>({
   elements: [],
-  selectedElement: null,
-  setSelectedElement: () => {},
+  selectedElements: [],
+  setSelectedElements: () => {},
   addElement: () => {},
   removeElement: () => {},
 });

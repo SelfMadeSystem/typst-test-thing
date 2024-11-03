@@ -4,7 +4,7 @@ import { SvgThing } from "../SvgThing";
 
 export function EditorProvider() {
   const [elements, setElements] = useState<[string, JSX.Element][]>([]);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [selectedElements, setSelectedElements] = useState<string[]>([]);
 
   function addElement(id: string, element: JSX.Element) {
     setElements((elements) => [...elements, [id, element]]);
@@ -16,31 +16,29 @@ export function EditorProvider() {
     );
   }
 
-  function handleSelectElement(id: string | null) {
-    setSelectedElement(id);
+  function handleSelectElements(ids: string[]) {
+    setSelectedElements(ids);
 
-    if (id) {
-      setElements((elements) => {
-        const selectedElement = elements.find(([elemId]) => elemId === id);
-        if (selectedElement) {
-          return [
-            ...elements.filter(([elemId]) => elemId !== id),
-            selectedElement,
-          ];
-        }
-        return elements;
-      });
+    if (ids.length === 0) {
+      return;
     }
+
+    setElements((elements) => {
+      const selectedElements = elements.filter(([id]) => ids.includes(id));
+      const restElements = elements.filter(([id]) => !ids.includes(id));
+
+      return [...restElements, ...selectedElements];
+    });
   }
 
   useEffect(() => {
     function bgClick(e: MouseEvent) {
       e.preventDefault();
-      handleSelectElement(null);
+      handleSelectElements([]);
     }
 
     window.addEventListener("mousedown", bgClick);
-  });
+  }, []);
 
   useEffect(() => {
     function newThing(event: MouseEvent) {
@@ -61,7 +59,7 @@ export function EditorProvider() {
           />,
         ],
       ]);
-      setSelectedElement(newId);
+      setSelectedElements([newId]);
     }
 
     window.addEventListener("dblclick", newThing);
@@ -74,8 +72,8 @@ export function EditorProvider() {
   return (
     <EditorContext.Provider
       value={{
-        selectedElement,
-        setSelectedElement: handleSelectElement,
+        selectedElements,
+        setSelectedElements: handleSelectElements,
         elements,
         addElement,
         removeElement,
