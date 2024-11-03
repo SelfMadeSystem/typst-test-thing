@@ -1,14 +1,34 @@
 import { useState, useRef, useEffect } from "react";
 import { useSvgRenderer } from "./useSvgRenderer";
+import { useEditorContext } from "./editor/EditorContext";
 
-export function SvgThing() {
+export function SvgThing({
+  id,
+  x: initialX = 50,
+  y: initialY = 50,
+  width: initialWidth = 200,
+  height: initialHeight = 100,
+}: {
+  id: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}) {
+  const { selectedElement, setSelectedElement, removeElement } =
+    useEditorContext();
+
+  const selected = selectedElement === id;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(800);
-  const [height, setHeight] = useState(600);
-  const [x, setX] = useState(0);
-  const [y, setY] = useState(0);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [width, setWidth] = useState(initialWidth);
+  const [height, setHeight] = useState(initialHeight);
+  const [x, setX] = useState(initialX);
+  const [y, setY] = useState(initialY);
   const { pixelPerPt, setPixelPerPt, render } = useSvgRenderer({
     width,
     height,
@@ -16,122 +36,162 @@ export function SvgThing() {
   });
 
   const [text, setText] = useState("");
-  const [scale, setScale] = useState(1);
-
-  async function rerender() {
-    await render(text);
-  }
 
   useEffect(() => {
-    rerender();
-  }, [pixelPerPt]);
+    render(text);
+  }, [pixelPerPt, width, height]);
 
   useEffect(() => {
-    let mouseX = 0;
-    let mouseY = 0;
-    let isResizing = false;
-    let isDragging = false;
+    console.log(text, selected, editing);
+    if (selected) return;
+    setEditing(false);
 
+    if (text.trim() === "") {
+      removeElement(id);
+      return;
+    }
+
+    if (!editing) return;
+    render(text);
+  }, [editing, selected]);
+
+  const mouseX = useRef(0);
+  const mouseY = useRef(0);
+  const isResizing = useRef(false);
+  const isDragging = useRef(false);
+
+  useEffect(() => {
     function handleMouseDown(event: MouseEvent) {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
+      event.stopPropagation();
+      if (editing) return;
+      mouseX.current = event.clientX;
+      mouseY.current = event.clientY;
       event.preventDefault();
+      setSelectedElement(id);
+    }
+
+    function handleDoubleClick(event: MouseEvent) {
+      setEditing(true);
+      isResizing.current = false;
+      isDragging.current = false;
+      event.stopPropagation();
+      requestAnimationFrame(() => {
+        textRef.current?.focus();
+      });
     }
 
     function handleDragMouseDown(event: MouseEvent) {
       handleMouseDown(event);
-      isDragging = true;
+      if (editing) return;
+      isDragging.current = true;
     }
 
     function handleResizeMouseDown(event: MouseEvent) {
       handleMouseDown(event);
-      isResizing = true;
+      if (editing) return;
+      isResizing.current = true;
     }
 
     function handleMouseMove(event: MouseEvent) {
-      if (isResizing) {
-        const dx = event.clientX - mouseX;
-        const dy = event.clientY - mouseY;
+      if (isResizing.current) {
+        const dx = event.clientX - mouseX.current;
+        const dy = event.clientY - mouseY.current;
 
         setWidth((prev) => prev + dx);
         setHeight((prev) => prev + dy);
 
-        mouseX = event.clientX;
-        mouseY = event.clientY;
+        mouseX.current = event.clientX;
+        mouseY.current = event.clientY;
       }
-      if (isDragging) {
-        const dx = event.clientX - mouseX;
-        const dy = event.clientY - mouseY;
+      if (isDragging.current) {
+        const dx = event.clientX - mouseX.current;
+        const dy = event.clientY - mouseY.current;
 
         setX((prev) => prev + dx);
         setY((prev) => prev + dy);
 
-        mouseX = event.clientX;
-        mouseY = event.clientY;
+        mouseX.current = event.clientX;
+        mouseY.current = event.clientY;
       }
     }
 
     function handleMouseUp() {
-      isResizing = false;
-      isDragging = false;
+      isResizing.current = false;
+      isDragging.current = false;
+    }
+
+    function handleScroll(event: WheelEvent) {
+      if (editing) return;
+      const delta = event.deltaY;
+      setPixelPerPt((prev) => prev + delta / 1000);
     }
 
     const outer = outerRef.current!;
     const resize = resizeRef.current!;
 
     outer.addEventListener("mousedown", handleDragMouseDown);
+    outer.addEventListener("dblclick", handleDoubleClick);
+    outer.addEventListener("wheel", handleScroll);
     resize.addEventListener("mousedown", handleResizeMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       outer.removeEventListener("mousedown", handleDragMouseDown);
+      outer.removeEventListener("dblclick", handleDoubleClick);
+      outer.removeEventListener("wheel", handleScroll);
       resize.removeEventListener("mousedown", handleResizeMouseDown);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, []);
+  }, [editing, id, setPixelPerPt, setSelectedElement]);
+
+  useEffect(() => {
+    const textarea = textRef.current;
+    if (!textarea) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setEditing(false);
+        render(text);
+      }
+    }
+
+    textarea.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      textarea.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [textRef, editing, render]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      <div className="flex items-center">
-        <textarea
-          className="p-2 resize bg-gray-800 text-white font-mono"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <input
-          className="ml-4 p-1 w-12 bg-gray-800 text-white"
-          type="number"
-          value={scale}
-          min={0.1}
-          max={10}
-          step={0.1}
-          onChange={(e) => {
-            const value = Number(e.target.value);
-            setScale(value);
-            setPixelPerPt(value ** 2 * 2);
-          }}
-        />
-        <button className="ml-4 p-2 bg-gray-800 text-white" onClick={rerender}>
-          Render
-        </button>
-      </div>
-      <div
-        className="absolute outline-dashed outline-2"
-        ref={outerRef}
-        style={{
-          top: y,
-          left: x,
-          width,
-          height,
-        }}
-      >
+    <div
+      className={`absolute ${selected ? `outline-dashed outline-2` : ""}`}
+      ref={outerRef}
+      style={{
+        top: y,
+        left: x,
+        width,
+        height,
+      }}
+    >
+      {editing && (
+        <>
+          <textarea
+            ref={textRef}
+            className="p-1 w-full h-full resize-none bg-gray-800 text-white font-mono"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+        </>
+      )}
+
+      <div className={`${editing ? "hidden" : ""}`}>
         <div
           ref={containerRef}
           className="overflow-hidden"
           style={{
-            transform: `scale(${scale ** 2 * 2})`,
+            transform: `scale(${pixelPerPt})`,
             transformOrigin: "top left",
             scrollbarWidth: "none",
             width: width / pixelPerPt,
@@ -140,7 +200,9 @@ export function SvgThing() {
         />
         <div
           ref={resizeRef}
-          className="absolute right-0 bottom-0 w-4 h-4 bg-gray-800 cursor-se-resize"
+          className={`${
+            selected ? "" : "hidden"
+          } absolute right-0 bottom-0 w-4 h-4 bg-gray-800 cursor-se-resize`}
         />
       </div>
     </div>

@@ -1,8 +1,7 @@
-// import { CanvasThing } from "./CanvasThing";
-import { SvgThing } from "./SvgThing";
+import { EditorProvider } from "./editor/EditorProvider";
 
 function App() {
-  return <SvgThing />;
+  return <EditorProvider></EditorProvider>;
 }
 
 export default App;

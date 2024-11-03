@@ -6,6 +6,7 @@ import {
 } from "@myriaddreamin/typst.ts";
 import renderModule from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url";
 import compileModule from "@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url";
+import { DiagnosticsData } from "@myriaddreamin/typst.ts/dist/esm/compiler.mjs";
 
 export function useRenderer({
   width = 800,
@@ -14,7 +15,12 @@ export function useRenderer({
 }: {
   width?: number;
   height?: number;
-  callback: (renderer: TypstRenderer, compiler: TypstCompiler, result: Uint8Array) => void;
+  callback: (
+    renderer: TypstRenderer,
+    compiler: TypstCompiler,
+    result: Uint8Array | undefined,
+    diagnostics: DiagnosticsData["full"][] | undefined
+  ) => void;
 }) {
   const [renderer, setRenderer] = useState<TypstRenderer | null>(null);
   const [compiler, setCompiler] = useState<TypstCompiler | null>(null);
@@ -65,10 +71,10 @@ ${text}`
     });
     if (result) {
       if (diagnostics && diagnostics.length > 0) console.info(diagnostics);
-      callback(renderer, compiler, result);
     } else {
       console.error(diagnostics);
     }
+    callback(renderer, compiler, result, diagnostics);
   }
 
   return {
