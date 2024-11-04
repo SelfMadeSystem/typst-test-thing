@@ -126,7 +126,6 @@ export function ResizeElement({
     }
 
     function onMouseUp() {
-      console.log("Mouse up");
       activeElement = null;
     }
 
@@ -295,11 +294,6 @@ export function ResizeElement({
           x += dx;
           y += dy;
           break;
-      }
-      // Check if the element has flipped
-      const flipped = width < 0 || height < 0;
-      if (flipped) {
-        console.log("Element has flipped");
       }
       set();
       mouseX = e.clientX;
