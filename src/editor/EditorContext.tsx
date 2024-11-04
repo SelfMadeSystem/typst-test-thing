@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { editorTabs, EditorTabType } from "./editorTabs";
 
 export type EditorContextType = {
   elements: [string, JSX.Element][];
@@ -6,6 +7,8 @@ export type EditorContextType = {
   setSelectedElements: (id: string[]) => void;
   addElement: (id: string, element: JSX.Element) => void;
   removeElement: (id: string) => void;
+  selectedTab: EditorTabType;
+  setSelectedTab: (tab: EditorTabType) => void;
 };
 
 export const EditorContext = createContext<EditorContextType>({
@@ -14,6 +17,8 @@ export const EditorContext = createContext<EditorContextType>({
   setSelectedElements: () => {},
   addElement: () => {},
   removeElement: () => {},
+  selectedTab: editorTabs[0],
+  setSelectedTab: () => {},
 });
 
 export function useEditorContext() {

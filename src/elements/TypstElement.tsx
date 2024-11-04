@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useSvgRenderer } from "./useSvgRenderer";
-import { useEditorContext } from "./editor/EditorContext";
+import { useSvgRenderer } from "../useSvgRenderer";
+import { useEditorContext } from "../editor/EditorContext";
+import { ElementComponent } from "./Element";
 
-export function SvgThing({
+export const TypstElement = (({
   id,
   x: initialX = 50,
   y: initialY = 50,
@@ -16,7 +17,7 @@ export function SvgThing({
   width?: number;
   height?: number;
   editing?: boolean;
-}) {
+}) => {
   const { selectedElements, setSelectedElements, removeElement } =
     useEditorContext();
 
@@ -62,8 +63,6 @@ export function SvgThing({
   }, [editing, selected]);
 
   function startEditing() {
-    if (editing || !selected) return;
-
     setEditing(true);
 
     requestAnimationFrame(() => {
@@ -269,4 +268,4 @@ export function SvgThing({
       </div>
     </div>
   );
-}
+}) satisfies ElementComponent;

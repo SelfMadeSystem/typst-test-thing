@@ -1,10 +1,12 @@
 import { EditorContext } from "./EditorContext";
 import { useEffect, useState } from "react";
-import { SvgThing } from "../SvgThing";
+import { editorTabs } from "./editorTabs";
+import { EditorTabs } from "./EditorTab";
 
 export function EditorProvider() {
   const [elements, setElements] = useState<[string, JSX.Element][]>([]);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
+  const [selectedTab, setSelectedTab] = useState(editorTabs[0]);
 
   function addElement(id: string, element: JSX.Element) {
     setElements((elements) => [...elements, [id, element]]);
@@ -46,16 +48,18 @@ export function EditorProvider() {
       const width = 200;
       const height = 100;
       const newId = Math.random().toString(36).substring(2, 9);
+      const SelectedElement = selectedTab.element;
       setElements((elements) => [
         ...elements,
         [
           newId,
-          <SvgThing
+          <SelectedElement
             id={newId}
             x={event.clientX - width / 2}
             y={event.clientY - height / 2}
             width={width}
             height={height}
+            editing={true}
           />,
         ],
       ]);
@@ -67,7 +71,7 @@ export function EditorProvider() {
     return () => {
       window.removeEventListener("dblclick", newThing);
     };
-  }, []);
+  }, [selectedTab.element]);
 
   return (
     <EditorContext.Provider
@@ -77,8 +81,11 @@ export function EditorProvider() {
         elements,
         addElement,
         removeElement,
+        selectedTab,
+        setSelectedTab,
       }}
     >
+      <EditorTabs />
       {elements.map(([id, element]) => (
         <div key={id}>{element}</div>
       ))}
