@@ -35,6 +35,7 @@ export const RectElement = (({
   const { width, height } = sizeInfo;
   const [lineWidth] = useState(5);
   const [lineColor] = useState("white");
+  const [rounding] = useState(5);
 
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -69,6 +70,13 @@ export const RectElement = (({
       id={id}
     >
       <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          border: `${lineWidth}px solid ${lineColor}`,
+          borderRadius: rounding,
+        }}
+      />
+      <div
         style={{
           top: -8,
           left: -8,
@@ -77,12 +85,7 @@ export const RectElement = (({
         }}
         ref={topLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
-      >
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: lineColor }}
-        />
-      </div>
+      />
       <div
         style={{
           top: -8,
@@ -92,12 +95,7 @@ export const RectElement = (({
         }}
         ref={rightLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
-      >
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: lineColor }}
-        />
-      </div>
+      />
       <div
         style={{
           top: height - 8 - lineWidth,
@@ -107,12 +105,7 @@ export const RectElement = (({
         }}
         ref={bottomLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
-      >
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: lineColor }}
-        />
-      </div>
+      />
       <div
         style={{
           top: -8,
@@ -122,12 +115,7 @@ export const RectElement = (({
         }}
         ref={leftLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
-      >
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: lineColor }}
-        />
-      </div>
+      />
     </ResizeElement>
   );
 }) satisfies ElementComponent;

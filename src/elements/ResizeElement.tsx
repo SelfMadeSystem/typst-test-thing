@@ -140,15 +140,15 @@ export function ResizeElement({
         br.y += bottom * cos + right * sin;
         br.x += -bottom * sin + right * cos;
 
-        // Unrotate the points
-        const tlX = tl.x * cos + tl.y * sin;
-        const tlY = -tl.x * sin + tl.y * cos;
-        const trX = tr.x * cos + tr.y * sin;
-        const blY = -bl.x * sin + bl.y * cos;
+        // Unrotate the edges
+        const l = tl.x * cos + tl.y * sin;
+        const t = -tl.x * sin + tl.y * cos;
+        const r = tr.x * cos + tr.y * sin;
+        const b = -bl.x * sin + bl.y * cos;
 
         // Check if the element has flipped
-        flippedX = tlX > trX;
-        flippedY = tlY > blY;
+        flippedX = l > r;
+        flippedY = t > b;
 
         // Set the new position and size
         x = (tl.x + tr.x + br.x + bl.x) / 4;
