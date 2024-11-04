@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSvgRenderer } from "../useSvgRenderer";
 import { useEditorContext } from "../editor/EditorContext";
 import { ElementComponent } from "./Element";
+import { ResizeElement } from "./ResizeElement";
 
 export const TypstElement = (({
   id,
@@ -25,13 +26,16 @@ export const TypstElement = (({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
-  const resizeRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [editing, setEditing] = useState(initialEditing);
-  const [width, setWidth] = useState(initialWidth);
-  const [height, setHeight] = useState(initialHeight);
-  const [x, setX] = useState(initialX);
-  const [y, setY] = useState(initialY);
+  const [sizeInfo, setSizeInfo] = useState({
+    x: initialX,
+    y: initialY,
+    width: initialWidth,
+    height: initialHeight,
+    rotation: 0,
+  });
+  const { width, height } = sizeInfo;
   const { pixelPerPt, setPixelPerPt, render } = useSvgRenderer({
     width,
     height,
@@ -74,66 +78,17 @@ export const TypstElement = (({
     });
   }
 
-  const mouseX = useRef(0);
-  const mouseY = useRef(0);
-  const isResizing = useRef(false);
-  const isDragging = useRef(false);
-
   useEffect(() => {
     function handleMouseDown(event: MouseEvent) {
       event.stopPropagation();
       if (editing) return;
-      mouseX.current = event.clientX;
-      mouseY.current = event.clientY;
       event.preventDefault();
       setSelectedElements([id]);
     }
 
     function handleDoubleClick(event: MouseEvent) {
-      isResizing.current = false;
-      isDragging.current = false;
       event.stopPropagation();
       startEditing();
-    }
-
-    function handleDragMouseDown(event: MouseEvent) {
-      handleMouseDown(event);
-      if (editing) return;
-      isDragging.current = true;
-    }
-
-    function handleResizeMouseDown(event: MouseEvent) {
-      handleMouseDown(event);
-      if (editing) return;
-      isResizing.current = true;
-    }
-
-    function handleMouseMove(event: MouseEvent) {
-      if (isResizing.current) {
-        const dx = event.clientX - mouseX.current;
-        const dy = event.clientY - mouseY.current;
-
-        setWidth((prev) => prev + dx);
-        setHeight((prev) => prev + dy);
-
-        mouseX.current = event.clientX;
-        mouseY.current = event.clientY;
-      }
-      if (isDragging.current) {
-        const dx = event.clientX - mouseX.current;
-        const dy = event.clientY - mouseY.current;
-
-        setX((prev) => prev + dx);
-        setY((prev) => prev + dy);
-
-        mouseX.current = event.clientX;
-        mouseY.current = event.clientY;
-      }
-    }
-
-    function handleMouseUp() {
-      isResizing.current = false;
-      isDragging.current = false;
     }
 
     function handleScroll(event: WheelEvent) {
@@ -144,22 +99,15 @@ export const TypstElement = (({
     }
 
     const outer = outerRef.current!;
-    const resize = resizeRef.current!;
 
-    outer.addEventListener("mousedown", handleDragMouseDown);
+    outer.addEventListener("mousedown", handleMouseDown);
     outer.addEventListener("dblclick", handleDoubleClick);
-    outer.addEventListener("wheel", handleScroll);
-    resize.addEventListener("mousedown", handleResizeMouseDown);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    outer.addEventListener("wheel", handleScroll)
 
     return () => {
-      outer.removeEventListener("mousedown", handleDragMouseDown);
+      outer.removeEventListener("mousedown", handleMouseDown);
       outer.removeEventListener("dblclick", handleDoubleClick);
       outer.removeEventListener("wheel", handleScroll);
-      resize.removeEventListener("mousedown", handleResizeMouseDown);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [editing, id, setPixelPerPt, setSelectedElements]);
 
@@ -186,29 +134,8 @@ export const TypstElement = (({
 
     function handleKeyDown(event: KeyboardEvent) {
       switch (event.key) {
-        case "Backspace":
-        case "Delete": {
-          removeElement(id);
-          break;
-        }
         case "Enter": {
           startEditing();
-          break;
-        }
-        case "ArrowUp": {
-          setY((prev) => prev - 1);
-          break;
-        }
-        case "ArrowDown": {
-          setY((prev) => prev + 1);
-          break;
-        }
-        case "ArrowLeft": {
-          setX((prev) => prev - 1);
-          break;
-        }
-        case "ArrowRight": {
-          setX((prev) => prev + 1);
           break;
         }
       }
@@ -222,23 +149,20 @@ export const TypstElement = (({
   }, [selected, editing, id, removeElement]);
 
   return (
-    <div
-      className={`absolute overflow-hidden cursor-move ${
-        selected ? `outline-dashed outline-2` : ""
-      }`}
-      ref={outerRef}
-      style={{
-        top: y,
-        left: x,
-        width,
-        height,
-      }}
+    <ResizeElement
+      sizeInfo={sizeInfo}
+      setSizeInfo={setSizeInfo}
+      selected={selected}
+      editing={editing}
+      outerRef={outerRef}
+      alwaysSelectable={true}
+      id={id}
     >
       {editing && (
         <>
           <textarea
             ref={textRef}
-            className="p-1 w-full h-full resize-none bg-gray-800 text-white font-mono"
+            className="p-1 w-full h-full resize-none bg-gray-800 text-white font-mono pointer-events-auto"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -257,15 +181,7 @@ export const TypstElement = (({
             height: height / pixelPerPt,
           }}
         />
-        <div
-          ref={resizeRef}
-          className={`${
-            selected ? "" : "hidden"
-          } absolute right-0 bottom-0 w-5 h-5 cursor-se-resize`}
-        >
-          <div className="w-8 h-8 rotate-45 origin-center translate-x-1 translate-y-1 bg-gray-700" />
-        </div>
       </div>
-    </div>
+    </ResizeElement>
   );
 }) satisfies ElementComponent;

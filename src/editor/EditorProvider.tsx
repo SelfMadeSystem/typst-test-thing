@@ -45,18 +45,16 @@ export function EditorProvider() {
   useEffect(() => {
     function newThing(event: MouseEvent) {
       event.preventDefault();
-      const width = 200;
-      const height = 100;
       const newId = Math.random().toString(36).substring(2, 9);
-      const SelectedElement = selectedTab.element;
+      const { element: SelectedElement, width, height } = selectedTab;
       setElements((elements) => [
         ...elements,
         [
           newId,
           <SelectedElement
             id={newId}
-            x={event.clientX - width / 2}
-            y={event.clientY - height / 2}
+            x={event.clientX}
+            y={event.clientY}
             width={width}
             height={height}
             editing={true}

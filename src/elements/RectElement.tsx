@@ -67,6 +67,7 @@ export const RectElement = (({
       sizeInfo={sizeInfo}
       setSizeInfo={setSizeInfo}
       selected={selected}
+      startResizing={true}
       id={id}
     >
       <div

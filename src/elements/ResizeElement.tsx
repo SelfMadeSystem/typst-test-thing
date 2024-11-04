@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useCallback, useEffect, useRef } from "react";
 import { useEditorContext } from "../editor/EditorContext";
 import { SizeInfo } from "./SizeInfo";
 
@@ -7,15 +7,34 @@ export function ResizeElement({
   setSizeInfo,
   selected,
   id,
+  outerRef,
+  editing,
+  alwaysSelectable,
+  startResizing,
   children,
 }: PropsWithChildren<{
   sizeInfo: SizeInfo;
   setSizeInfo: (sizeInfo: SizeInfo) => void;
   selected: boolean;
+  outerRef?: React.MutableRefObject<HTMLDivElement | null>;
+  editing?: boolean;
+  alwaysSelectable?: boolean;
+  startResizing?: boolean;
   id: string;
 }>) {
   const { removeElement } = useEditorContext();
-  const boxRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const resizing = useRef<boolean>(startResizing ?? false);
+
+  const setBoxRefs = useCallback(
+    (element: HTMLDivElement) => {
+      if (outerRef) {
+        outerRef.current = element;
+      }
+      boxRef.current = element;
+    },
+    [outerRef]
+  );
 
   const rotateRef = useRef<HTMLDivElement>(null);
 
@@ -75,9 +94,17 @@ export function ResizeElement({
       });
     }
 
-    let activeElement: HTMLDivElement | null = box;
+    let activeElement: HTMLDivElement | null = resizing.current
+      ? resizeBottomRight
+      : editing
+      ? null
+      : box;
 
     function onMouseDown(e: MouseEvent) {
+      if (editing) {
+        return;
+      }
+      resizing.current = false;
       e.preventDefault();
       e.stopPropagation();
       mouseX = e.clientX;
@@ -87,6 +114,7 @@ export function ResizeElement({
     }
 
     function onMouseUp() {
+      console.log("Mouse up");
       activeElement = null;
     }
 
@@ -254,6 +282,9 @@ export function ResizeElement({
     }
 
     function onKeyDown(e: KeyboardEvent) {
+      if (editing) {
+        return;
+      }
       switch (e.key) {
         case "Delete":
         case "Backspace":
@@ -309,14 +340,16 @@ export function ResizeElement({
         element?.removeEventListener("mousedown", onMouseDown)
       );
     };
-  }, [selected, setSizeInfo]);
+  }, [editing, id, removeElement, selected]);
 
   return (
     <>
       <div
-        ref={boxRef}
+        ref={setBoxRefs}
         className={`absolute box-border cursor-move ${
-          selected ? "" : "pointer-events-none"
+          (selected || alwaysSelectable) && !editing
+            ? ""
+            : "pointer-events-none"
         }`}
         style={{
           top: sizeInfo.y,
