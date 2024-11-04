@@ -1,6 +1,7 @@
 import { CanvasTypstElement } from "../elements/CanvasTypstElement";
 import { CircleElement } from "../elements/CircleElement";
 import { ElementComponent } from "../elements/Element";
+import { LineElement } from "../elements/LineElement";
 import { RectElement } from "../elements/RectElement";
 import { SvgTypstElement } from "../elements/SvgTypstElement";
 
@@ -26,6 +27,13 @@ export const editorTabs: EditorTabType[] = [
     height: 100,
     name: "STypst",
     icon: "📝",
+  },
+  {
+    element: LineElement,
+    width: 50,
+    height: 50,
+    name: "Line",
+    icon: "📏",
   },
   {
     element: RectElement,
