@@ -1,7 +1,13 @@
-import { PropsWithChildren, useCallback, useEffect, useRef, useState } from "react";
+import {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useEditorContext } from "../editor/EditorContext";
 import { SizeInfo } from "./SizeInfo";
-import { mod } from "../utilts";
+import { mod } from "../utils";
 
 export function ResizeElement({
   sizeInfo,
@@ -95,6 +101,8 @@ export function ResizeElement({
     let mouseY = NaN;
 
     let { x, y, width, height, rotation } = sizeInfo;
+    let aspectRatio = height === 0 ? 1 : width / height;
+    console.log("aspectRatio", aspectRatio);
 
     function set() {
       setSizeInfo({
@@ -113,19 +121,21 @@ export function ResizeElement({
       : box;
 
     function onMouseDown(e: MouseEvent) {
+      resizing.current = false;
       if (editing) {
         return;
       }
-      resizing.current = false;
       e.preventDefault();
       e.stopPropagation();
       mouseX = e.clientX;
       mouseY = e.clientY;
+      aspectRatio = height === 0 ? 1 : width / height;
 
       activeElement = e.target as HTMLDivElement;
     }
 
     function onMouseUp() {
+      resizing.current = false;
       activeElement = null;
     }
 
@@ -159,17 +169,90 @@ export function ResizeElement({
       let flippedX = false;
       let flippedY = false;
 
+      let mouseStateX = 0;
+      let mouseStateY = 0;
+
+      const preserveAspectRatio = e.shiftKey;
+      const fromCenter = e.altKey;
+
       function resize({
-        top = 0,
-        right = 0,
-        bottom = 0,
-        left = 0,
+        top,
+        right,
+        bottom,
+        left,
       }: {
         top?: number;
         right?: number;
         bottom?: number;
         left?: number;
       }) {
+        if (preserveAspectRatio) {
+          if (fromCenter) {
+            let distX = right ?? -left!;
+            let distY = bottom ?? -top!;
+
+            if (distX > distY) {
+              distY = distX / aspectRatio;
+            } else {
+              distX = distY * aspectRatio;
+            }
+
+            top = -distY;
+            right = distX;
+            bottom = distY;
+            left = -distX;
+          } else if (
+            (top !== undefined || bottom !== undefined) &&
+            left === undefined &&
+            right === undefined
+          ) {
+            const distY = top ?? -bottom!;
+            const distX = aspectRatio * (height + distY) - width;
+            left = -distX / 2;
+            right = distX / 2;
+          } else if (
+            (left !== undefined || right !== undefined) &&
+            top === undefined &&
+            bottom === undefined
+          ) {
+            const distX = left ?? -right!;
+            const distY = (width + distX) / aspectRatio - height;
+            top = -distY / 2;
+            bottom = distY / 2;
+          } else {
+            let distX = right ?? -left!;
+            let distY = bottom ?? -top!;
+
+            if (distX > distY) {
+              distY = (width + distX) / aspectRatio - height;
+
+              if (top !== undefined) {
+                top = -distY;
+              } else {
+                bottom = distY;
+              }
+            } else {
+              distX = aspectRatio * (height + distY) - width;
+
+              if (left !== undefined) {
+                left = -distX;
+              } else {
+                right = distX;
+              }
+            }
+          }
+        }
+
+        top = top ?? 0;
+        right = right ?? 0;
+        bottom = bottom ?? 0;
+        left = left ?? 0;
+
+        if (fromCenter && !preserveAspectRatio) {
+          [top, bottom] = [top - bottom, bottom - top];
+          [left, right] = [left - right, right - left];
+        }
+
         tl.y += top * cos + left * sin;
         tl.x += -top * sin + left * cos;
         bl.y += bottom * cos + left * sin;
@@ -194,6 +277,27 @@ export function ResizeElement({
         y = (tl.y + tr.y + br.y + bl.y) / 4;
         width = Math.hypot(tr.x - tl.x, tr.y - tl.y);
         height = Math.hypot(tr.x - br.x, tr.y - br.y);
+
+        // Check where the mouse is
+        // -1 means left/top, 0 means center, 1 means right/bottom
+        const [mouseX, mouseY] = mouseDiff({ x, y });
+        if (mouseX < -width / 2) {
+          mouseStateX = -1;
+        } else if (mouseX > width / 2) {
+          mouseStateX = 1;
+        }
+
+        if (mouseY < -height / 2) {
+          mouseStateY = -1;
+        } else if (mouseY > height / 2) {
+          mouseStateY = 1;
+        }
+      }
+
+      function mouseDiff(pos: { x: number; y: number }) {
+        const diffX = e.clientX - pos.x;
+        const diffY = e.clientY - pos.y;
+        return [diffX * cos + diffY * sin, -diffX * sin + diffY * cos];
       }
 
       switch (activeElement) {
@@ -229,41 +333,45 @@ export function ResizeElement({
           break;
         }
         case topLeft: {
-          resize({ top: distY, left: distX });
-          if (flippedX) {
+          const [diffX, diffY] = mouseDiff(tl);
+          resize({ top: diffY, left: diffX });
+          if (flippedX || mouseStateX === 1) {
             activeElement = topRight;
           }
-          if (flippedY) {
+          if (flippedY || mouseStateY === 1) {
             activeElement = bottomLeft;
           }
           break;
         }
         case topRight: {
-          resize({ top: distY, right: distX });
-          if (flippedX) {
+          const [diffX, diffY] = mouseDiff(tr);
+          resize({ top: diffY, right: diffX });
+          if (flippedX || mouseStateX === -1) {
             activeElement = topLeft;
           }
-          if (flippedY) {
+          if (flippedY || mouseStateY === 1) {
             activeElement = bottomRight;
           }
           break;
         }
         case bottomLeft: {
-          resize({ bottom: distY, left: distX });
-          if (flippedX) {
+          const [diffX, diffY] = mouseDiff(bl);
+          resize({ bottom: diffY, left: diffX });
+          if (flippedX || mouseStateX === 1) {
             activeElement = bottomRight;
           }
-          if (flippedY) {
+          if (flippedY || mouseStateY === -1) {
             activeElement = topLeft;
           }
           break;
         }
         case bottomRight: {
-          resize({ bottom: distY, right: distX });
-          if (flippedX) {
+          const [diffX, diffY] = mouseDiff(br);
+          resize({ bottom: diffY, right: diffX });
+          if (flippedX || mouseStateX === -1) {
             activeElement = bottomLeft;
           }
-          if (flippedY) {
+          if (flippedY || mouseStateY === -1) {
             activeElement = topRight;
           }
           break;
