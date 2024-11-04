@@ -1,22 +1,30 @@
+import { CanvasTypstElement } from "../elements/CanvasTypstElement";
 import { CircleElement } from "../elements/CircleElement";
 import { ElementComponent } from "../elements/Element";
 import { RectElement } from "../elements/RectElement";
-import { TypstElement } from "../elements/TypstElement";
+import { SvgTypstElement } from "../elements/SvgTypstElement";
 
 export type EditorTabType = {
-  element: ElementComponent,
-  width: number,
-  height: number,
-  name: string,
-  icon: string,
-}
+  element: ElementComponent;
+  width: number;
+  height: number;
+  name: string;
+  icon: string;
+};
 
 export const editorTabs: EditorTabType[] = [
   {
-    element: TypstElement,
+    element: CanvasTypstElement,
     width: 200,
     height: 100,
-    name: "Typst",
+    name: "CTypst",
+    icon: "📝",
+  },
+  {
+    element: SvgTypstElement,
+    width: 200,
+    height: 100,
+    name: "STypst",
     icon: "📝",
   },
   {
@@ -32,5 +40,5 @@ export const editorTabs: EditorTabType[] = [
     height: 0,
     name: "Circle",
     icon: "⚪",
-  }
-]
+  },
+];

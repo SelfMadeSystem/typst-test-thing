@@ -4,7 +4,7 @@ import { useEditorContext } from "../editor/EditorContext";
 import { ElementComponent } from "./Element";
 import { ResizeElement } from "./ResizeElement";
 
-export const TypstElement = (({
+export const SvgTypstElement = (({
   id,
   x: initialX = 50,
   y: initialY = 50,
@@ -102,7 +102,7 @@ export const TypstElement = (({
 
     outer.addEventListener("mousedown", handleMouseDown);
     outer.addEventListener("dblclick", handleDoubleClick);
-    outer.addEventListener("wheel", handleScroll)
+    outer.addEventListener("wheel", handleScroll);
 
     return () => {
       outer.removeEventListener("mousedown", handleMouseDown);
