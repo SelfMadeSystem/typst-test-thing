@@ -30,10 +30,11 @@ export const RectElement = (({
     y: initialY,
     width: initialWidth,
     height: initialHeight,
+    rotation: 0,
   });
   const { width, height } = sizeInfo;
-  const [lineWidth, setLineWidth] = useState(5);
-  const [lineColor, setLineColor] = useState("white");
+  const [lineWidth] = useState(5);
+  const [lineColor] = useState("white");
 
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -120,7 +121,7 @@ export const RectElement = (({
           height,
         }}
         ref={leftLineRef}
-        className="absolute border-8 border-transparent box-content cursor-move"
+        className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
       >
         <div
           className="absolute inset-0"
