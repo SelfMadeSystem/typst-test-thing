@@ -1,6 +1,7 @@
-import { PropsWithChildren, useCallback, useEffect, useRef } from "react";
+import { PropsWithChildren, useCallback, useEffect, useRef, useState } from "react";
 import { useEditorContext } from "../editor/EditorContext";
 import { SizeInfo } from "./SizeInfo";
+import { mod } from "../utilts";
 
 export function ResizeElement({
   sizeInfo,
@@ -38,15 +39,26 @@ export function ResizeElement({
 
   const rotateRef = useRef<HTMLDivElement>(null);
 
-  const topLineRef = useRef<HTMLDivElement>(null);
-  const rightLineRef = useRef<HTMLDivElement>(null);
-  const bottomLineRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const leftLineRef = useRef<HTMLDivElement>(null);
 
-  const resizeTopLeftRef = useRef<HTMLDivElement>(null);
-  const resizeTopRightRef = useRef<HTMLDivElement>(null);
-  const resizeBottomLeftRef = useRef<HTMLDivElement>(null);
-  const resizeBottomRightRef = useRef<HTMLDivElement>(null);
+  const topLeftRef = useRef<HTMLDivElement>(null);
+  const topRightRef = useRef<HTMLDivElement>(null);
+  const bottomLeftRef = useRef<HTMLDivElement>(null);
+  const bottomRightRef = useRef<HTMLDivElement>(null);
+
+  type Cursors =
+    | "cursor-ns-resize"
+    | "cursor-ew-resize"
+    | "cursor-nwse-resize"
+    | "cursor-nesw-resize";
+
+  const [tbCursor, setTbCursor] = useState<Cursors>("cursor-ns-resize");
+  const [lrCursor, setLrCursor] = useState<Cursors>("cursor-ew-resize");
+  const [tlbrCursor, setTlbrCursor] = useState<Cursors>("cursor-nwse-resize");
+  const [trblCursor, setTrblCursor] = useState<Cursors>("cursor-nesw-resize");
 
   useEffect(() => {
     if (!selected) {
@@ -54,28 +66,28 @@ export function ResizeElement({
     }
 
     const box = boxRef.current!;
-    const topLine = topLineRef.current;
-    const rightLine = rightLineRef.current;
-    const bottomLine = bottomLineRef.current;
-    const leftLine = leftLineRef.current;
+    const top = topRef.current;
+    const right = rightRef.current;
+    const bottom = bottomRef.current;
+    const left = leftLineRef.current;
 
-    const resizeTopLeft = resizeTopLeftRef.current;
-    const resizeTopRight = resizeTopRightRef.current;
-    const resizeBottomLeft = resizeBottomLeftRef.current;
-    const resizeBottomRight = resizeBottomRightRef.current;
+    const topLeft = topLeftRef.current;
+    const topRight = topRightRef.current;
+    const bottomLeft = bottomLeftRef.current;
+    const bottomRight = bottomRightRef.current;
 
     const rotate = rotateRef.current;
 
     const elements = [
       box,
-      topLine,
-      rightLine,
-      bottomLine,
-      leftLine,
-      resizeTopLeft,
-      resizeTopRight,
-      resizeBottomLeft,
-      resizeBottomRight,
+      top,
+      right,
+      bottom,
+      left,
+      topLeft,
+      topRight,
+      bottomLeft,
+      bottomRight,
       rotate,
     ];
 
@@ -95,7 +107,7 @@ export function ResizeElement({
     }
 
     let activeElement: HTMLDivElement | null = resizing.current
-      ? resizeBottomRight
+      ? bottomRight
       : editing
       ? null
       : box;
@@ -189,71 +201,71 @@ export function ResizeElement({
         case null: {
           break;
         }
-        case topLine: {
+        case top: {
           resize({ top: distY });
           if (flippedY) {
-            activeElement = bottomLine;
+            activeElement = bottom;
           }
           break;
         }
-        case bottomLine: {
+        case bottom: {
           resize({ bottom: distY });
           if (flippedY) {
-            activeElement = topLine;
+            activeElement = top;
           }
           break;
         }
-        case leftLine: {
+        case left: {
           resize({ left: distX });
           if (flippedX) {
-            activeElement = rightLine;
+            activeElement = right;
           }
           break;
         }
-        case rightLine: {
+        case right: {
           resize({ right: distX });
           if (flippedX) {
-            activeElement = leftLine;
+            activeElement = left;
           }
           break;
         }
-        case resizeTopLeft: {
+        case topLeft: {
           resize({ top: distY, left: distX });
           if (flippedX) {
-            activeElement = resizeTopRight;
+            activeElement = topRight;
           }
           if (flippedY) {
-            activeElement = resizeBottomLeft;
+            activeElement = bottomLeft;
           }
           break;
         }
-        case resizeTopRight: {
+        case topRight: {
           resize({ top: distY, right: distX });
           if (flippedX) {
-            activeElement = resizeTopLeft;
+            activeElement = topLeft;
           }
           if (flippedY) {
-            activeElement = resizeBottomRight;
+            activeElement = bottomRight;
           }
           break;
         }
-        case resizeBottomLeft: {
+        case bottomLeft: {
           resize({ bottom: distY, left: distX });
           if (flippedX) {
-            activeElement = resizeBottomRight;
+            activeElement = bottomRight;
           }
           if (flippedY) {
-            activeElement = resizeTopLeft;
+            activeElement = topLeft;
           }
           break;
         }
-        case resizeBottomRight: {
+        case bottomRight: {
           resize({ bottom: distY, right: distX });
           if (flippedX) {
-            activeElement = resizeBottomLeft;
+            activeElement = bottomLeft;
           }
           if (flippedY) {
-            activeElement = resizeTopRight;
+            activeElement = topRight;
           }
           break;
         }
@@ -264,6 +276,19 @@ export function ResizeElement({
             angle = Math.round(angle / step) * step;
           }
           rotation = angle;
+          // Set cursors
+          const cursors: Cursors[] = [
+            "cursor-ns-resize",
+            "cursor-nesw-resize",
+            "cursor-ew-resize",
+            "cursor-nwse-resize",
+          ];
+
+          const index = mod(Math.round(angle / (Math.PI / 4)), 4);
+          setTbCursor(cursors[index]);
+          setTrblCursor(cursors[(index + 1) % 4]);
+          setLrCursor(cursors[(index + 2) % 4]);
+          setTlbrCursor(cursors[(index + 3) % 4]);
           break;
         }
         default:
@@ -366,42 +391,42 @@ export function ResizeElement({
           <>
             <div className="absolute -inset-4 pointer-events-none border-dashed border-2" />
             <div
-              ref={topLineRef}
-              className="absolute -top-8 -left-8 -right-8 h-8 cursor-ns-resize"
+              ref={topRef}
+              className={`absolute -top-8 -left-8 -right-8 h-8 ${tbCursor}`}
             />
             <div
-              ref={rightLineRef}
-              className="absolute -top-8 -bottom-8 -right-8 w-8 cursor-ew-resize"
+              ref={rightRef}
+              className={`absolute -top-8 -right-8 -bottom-8 w-8 ${lrCursor}`}
             />
             <div
-              ref={bottomLineRef}
-              className="absolute -left-8 -bottom-8 -right-8 h-8 cursor-ns-resize"
+              ref={bottomRef}
+              className={`absolute -right-8 -bottom-8 -left-8 h-8 ${tbCursor}`}
             />
             <div
               ref={leftLineRef}
-              className="absolute -top-8 -bottom-8 -left-8 w-8 cursor-ew-resize"
+              className={`absolute -bottom-8 -left-8 -top-8 w-8 ${lrCursor}`}
             />
             <div
-              ref={resizeTopLeftRef}
-              className="absolute -top-8 -left-8 w-8 h-8 cursor-nwse-resize"
+              ref={topLeftRef}
+              className={`absolute -top-8 -left-8 w-8 h-8 ${tlbrCursor}`}
             >
               <div className="absolute inset-2 border pointer-events-none" />
             </div>
             <div
-              ref={resizeTopRightRef}
-              className="absolute -top-8 -right-8 w-8 h-8 cursor-nesw-resize"
+              ref={topRightRef}
+              className={`absolute -top-8 -right-8 w-8 h-8 ${trblCursor}`}
             >
               <div className="absolute inset-2 border pointer-events-none" />
             </div>
             <div
-              ref={resizeBottomLeftRef}
-              className="absolute -bottom-8 -left-8 w-8 h-8 cursor-nesw-resize"
+              ref={bottomLeftRef}
+              className={`absolute -bottom-8 -left-8 w-8 h-8 ${trblCursor}`}
             >
               <div className="absolute inset-2 border pointer-events-none" />
             </div>
             <div
-              ref={resizeBottomRightRef}
-              className="absolute -bottom-8 -right-8 w-8 h-8 cursor-nwse-resize"
+              ref={bottomRightRef}
+              className={`absolute -bottom-8 -right-8 w-8 h-8 ${tlbrCursor}`}
             >
               <div className="absolute inset-2 border pointer-events-none" />
             </div>
