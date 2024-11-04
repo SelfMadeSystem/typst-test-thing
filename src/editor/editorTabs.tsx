@@ -1,3 +1,4 @@
+import { CircleElement } from "../elements/CircleElement";
 import { ElementComponent } from "../elements/Element";
 import { RectElement } from "../elements/RectElement";
 import { TypstElement } from "../elements/TypstElement";
@@ -25,4 +26,11 @@ export const editorTabs: EditorTabType[] = [
     name: "Rect",
     icon: "🔲",
   },
+  {
+    element: CircleElement,
+    width: 0,
+    height: 0,
+    name: "Circle",
+    icon: "⚪",
+  }
 ]
