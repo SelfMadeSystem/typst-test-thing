@@ -1,34 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useEditorContext } from "../editor/EditorContext";
-import { ElementComponent } from "./Element";
+import { ElementComponent, ElementProps } from "./Element";
 import { ResizeElement } from "./ResizeElement";
+import { getInitialSizeInfo, ResizeValues } from "./resizeElementTypes";
 
-export const CircleElement = (({
-  id,
-  x: initialX = 50,
-  y: initialY = 50,
-  width: initialWidth = 200,
-  height: initialHeight = 100,
-}: {
-  id: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-}) => {
+export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
   const { selectedElements, setSelectedElements } = useEditorContext();
 
   const selected = selectedElements.includes(id);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const [sizeInfo, setSizeInfo] = useState({
-    x: initialX,
-    y: initialY,
-    width: initialWidth,
-    height: initialHeight,
-    rotation: 0,
-  });
+  const [sizeInfo, setSizeInfo] = useState(getInitialSizeInfo(reason));
   const [lineWidth] = useState(5);
   const [lineColor] = useState("white");
 
@@ -85,4 +68,4 @@ export const CircleElement = (({
       </svg>
     </ResizeElement>
   );
-}) satisfies ElementComponent;
+}) satisfies ElementComponent<ResizeValues>;

@@ -1,21 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { useEditorContext } from "../editor/EditorContext";
-import { ElementComponent } from "./Element";
+import { ElementComponent, ElementProps } from "./Element";
+import { Vec2 } from "../utils";
 
-export const LineElement = (({
-  id,
-  x: initialX = 50,
-  y: initialY = 50,
-  width: initialWidth = 0,
-  height: initialHeight = 0,
-}: {
-  id: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-}) => {
-  const { selectedElements, setSelectedElements, removeElement } = useEditorContext();
+export type LineValues = {
+  start: Vec2;
+  end: Vec2;
+};
+
+export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
+  const { selectedElements, setSelectedElements, removeElement } =
+    useEditorContext();
 
   const selected = selectedElements.includes(id);
 
@@ -24,23 +19,23 @@ export const LineElement = (({
   const startRef = useRef<SVGRectElement>(null);
   const endRef = useRef<SVGRectElement>(null);
 
-  const [start, setStart] = useState({ x: initialX, y: initialY });
-  const [end, setEnd] = useState({
-    x: initialX + initialWidth,
-    y: initialY + initialHeight,
-  });
-  const [startStart, setStartStart] = useState({ x: initialX, y: initialY });
-  const [startEnd, setStartEnd] = useState({
-    x: initialX + initialWidth,
-    y: initialY + initialHeight,
-  });
+  const [start, setStart] = useState(
+    reason.type === "user-place" ? reason.mouse : reason.values.start
+  );
+  const [end, setEnd] = useState(
+    reason.type === "user-place" ? reason.mouse : reason.values.start
+  );
+  const [startStart, setStartStart] = useState(start);
+  const [startEnd, setStartEnd] = useState(end);
   const [lineWidth] = useState(5);
   const [lineColor] = useState("white");
 
   const [dragging, setDragging] = useState<false | "start" | "end" | "line">(
-    false
+    reason.type === "user-place" ? "end" : false
   );
-  const [mouseStart, setMouseStart] = useState({ x: 0, y: 0 });
+  const [mouseStart, setMouseStart] = useState(
+    reason.type === "user-place" ? reason.mouse : { x: 0, y: 0 }
+  );
 
   useEffect(() => {
     if (dragging == false) return;
@@ -52,29 +47,61 @@ export const LineElement = (({
       const dx = e.clientX - mouseStart.x;
       const dy = e.clientY - mouseStart.y;
 
+      const isSnapping = e.shiftKey;
+      const snapAngle = 15;
+
+      function snap(origin: Vec2, target: Vec2) {
+        if (!isSnapping) return target;
+        const angle = Math.atan2(target.y - origin.y, target.x - origin.x);
+        const snappedAngle =
+          Math.round(angle / (snapAngle * (Math.PI / 180))) *
+          snapAngle *
+          (Math.PI / 180);
+        const distance = Math.hypot(target.y - origin.y, target.x - origin.x);
+        return {
+          x: origin.x + distance * Math.cos(snappedAngle),
+          y: origin.y + distance * Math.sin(snappedAngle),
+        };
+      }
+
       switch (dragging) {
         case "start":
-          setStart({
-            x: startStart.x + dx,
-            y: startStart.y + dy,
-          });
+          setStart(
+            snap(startEnd, {
+              x: startStart.x + dx,
+              y: startStart.y + dy,
+            })
+          );
           break;
         case "end":
-          setEnd({
-            x: startEnd.x + dx,
-            y: startEnd.y + dy,
-          });
+          setEnd(
+            snap(startStart, {
+              x: startEnd.x + dx,
+              y: startEnd.y + dy,
+            })
+          );
           break;
-        case "line":
+        case "line": {
+          let moveX = dx;
+          let moveY = dy;
+
+          if (isSnapping) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+              moveY = 0;
+            } else {
+              moveX = 0;
+            }
+          }
           setStart({
-            x: startStart.x + dx,
-            y: startStart.y + dy,
+            x: startStart.x + moveX,
+            y: startStart.y + moveY,
           });
           setEnd({
-            x: startEnd.x + dx,
-            y: startEnd.y + dy,
+            x: startEnd.x + moveX,
+            y: startEnd.y + moveY,
           });
           break;
+        }
       }
     }
 
@@ -93,12 +120,9 @@ export const LineElement = (({
     };
   }, [
     dragging,
-    mouseStart.x,
-    mouseStart.y,
-    startEnd.x,
-    startEnd.y,
-    startStart.x,
-    startStart.y,
+    mouseStart,
+    startEnd,
+    startStart,
   ]);
 
   useEffect(() => {
@@ -140,29 +164,36 @@ export const LineElement = (({
     if (!selected) return;
 
     function handleKeyDown(e: KeyboardEvent) {
+      const amount = e.shiftKey ? 10 : 1;
       switch (e.key) {
         case "Delete":
         case "Backspace":
           removeElement(id);
+          e.preventDefault();
           break;
         case "Escape":
           setSelectedElements([]);
+          e.preventDefault();
           break;
         case "ArrowUp":
-          setStart({ x: start.x, y: start.y - 1 });
-          setEnd({ x: end.x, y: end.y - 1 });
+          setStart({ x: start.x, y: start.y - amount });
+          setEnd({ x: end.x, y: end.y - amount });
+          e.preventDefault();
           break;
         case "ArrowDown":
-          setStart({ x: start.x, y: start.y + 1 });
-          setEnd({ x: end.x, y: end.y + 1 });
+          setStart({ x: start.x, y: start.y + amount });
+          setEnd({ x: end.x, y: end.y + amount });
+          e.preventDefault();
           break;
         case "ArrowLeft":
-          setStart({ x: start.x - 1, y: start.y });
-          setEnd({ x: end.x - 1, y: end.y });
+          setStart({ x: start.x - amount, y: start.y });
+          setEnd({ x: end.x - amount, y: end.y });
+          e.preventDefault();
           break;
         case "ArrowRight":
-          setStart({ x: start.x + 1, y: start.y });
-          setEnd({ x: end.x + 1, y: end.y });
+          setStart({ x: start.x + amount, y: start.y });
+          setEnd({ x: end.x + amount, y: end.y });
+          e.preventDefault();
           break;
       }
     }
@@ -172,7 +203,7 @@ export const LineElement = (({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  })
+  });
 
   return (
     <svg
@@ -244,4 +275,4 @@ export const LineElement = (({
       )}
     </svg>
   );
-}) satisfies ElementComponent;
+}) satisfies ElementComponent<LineValues>;

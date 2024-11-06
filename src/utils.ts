@@ -1,3 +1,7 @@
+export type Vec2 = { x: number; y: number };
+
+export type Satisfies<U, T extends U> = T;
+
 export function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }

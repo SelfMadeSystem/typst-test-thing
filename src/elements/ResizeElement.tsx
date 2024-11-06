@@ -1,13 +1,15 @@
 import {
+  Dispatch,
   PropsWithChildren,
+  SetStateAction,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { useEditorContext } from "../editor/EditorContext";
-import { SizeInfo } from "./SizeInfo";
-import { mod } from "../utils";
+import { mod, } from "../utils";
+import { SizeInfo } from "./resizeElementTypes";
 
 export function ResizeElement({
   sizeInfo,
@@ -21,7 +23,7 @@ export function ResizeElement({
   children,
 }: PropsWithChildren<{
   sizeInfo: SizeInfo;
-  setSizeInfo: (sizeInfo: SizeInfo) => void;
+  setSizeInfo: Dispatch<SetStateAction<SizeInfo>>;
   selected: boolean;
   outerRef?: React.MutableRefObject<HTMLDivElement | null>;
   editing?: boolean;
@@ -102,7 +104,6 @@ export function ResizeElement({
 
     let { x, y, width, height, rotation } = sizeInfo;
     let aspectRatio = height === 0 ? 1 : width / height;
-    console.log("aspectRatio", aspectRatio);
 
     function set() {
       setSizeInfo({
@@ -379,7 +380,8 @@ export function ResizeElement({
         case rotate: {
           let angle = Math.atan2(e.clientY - y, e.clientX - x) + Math.PI / 2;
           if (e.shiftKey) {
-            const step = Math.PI / 8;
+            const snapAngle = 15;
+            const step = (Math.PI / 180) * snapAngle;
             angle = Math.round(angle / step) * step;
           }
           rotation = angle;
@@ -412,42 +414,32 @@ export function ResizeElement({
       if (editing) {
         return;
       }
+      const amount = e.shiftKey ? 10 : 1;
       switch (e.key) {
         case "Delete":
         case "Backspace":
           removeElement(id);
+          e.preventDefault();
           break;
         case "ArrowUp":
-          if (e.shiftKey) {
-            height -= 1;
-          } else {
-            y -= 1;
-          }
+          y -= amount;
           set();
+          e.preventDefault();
           break;
         case "ArrowRight":
-          if (e.shiftKey) {
-            width += 1;
-          } else {
-            x += 1;
-          }
+          x += amount;
           set();
+          e.preventDefault();
           break;
         case "ArrowDown":
-          if (e.shiftKey) {
-            height += 1;
-          } else {
-            y += 1;
-          }
+          y += amount;
           set();
+          e.preventDefault();
           break;
         case "ArrowLeft":
-          if (e.shiftKey) {
-            width -= 1;
-          } else {
-            x -= 1;
-          }
+          x -= amount;
           set();
+          e.preventDefault();
           break;
       }
     }

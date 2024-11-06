@@ -2,6 +2,7 @@ import { EditorContext } from "./EditorContext";
 import { useEffect, useState } from "react";
 import { editorTabs } from "./editorTabs";
 import { EditorTabs } from "./EditorTab";
+import { UserPlaceReason } from "../elements/Element";
 
 export function EditorProvider() {
   const [elements, setElements] = useState<[string, JSX.Element][]>([]);
@@ -46,20 +47,14 @@ export function EditorProvider() {
     function newThing(event: MouseEvent) {
       event.preventDefault();
       const newId = Math.random().toString(36).substring(2, 9);
-      const { element: SelectedElement, width, height } = selectedTab;
+      const { element: SelectedElement } = selectedTab;
+      const reason: UserPlaceReason = {
+        type: "user-place",
+        mouse: { x: event.clientX, y: event.clientY },
+      };
       setElements((elements) => [
         ...elements,
-        [
-          newId,
-          <SelectedElement
-            id={newId}
-            x={event.clientX}
-            y={event.clientY}
-            width={width}
-            height={height}
-            editing={true}
-          />,
-        ],
+        [newId, <SelectedElement id={newId} reason={reason} />],
       ]);
       setSelectedElements([newId]);
     }
@@ -69,7 +64,7 @@ export function EditorProvider() {
     return () => {
       window.removeEventListener("dblclick", newThing);
     };
-  }, [selectedTab.element]);
+  }, [selectedTab]);
 
   return (
     <EditorContext.Provider
