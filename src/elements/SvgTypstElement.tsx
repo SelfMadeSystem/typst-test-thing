@@ -8,6 +8,7 @@ import { useSvgRenderer } from "../useSvgRenderer";
 export const SvgTypstElement = (({
   id,
   reason,
+  state,
 }: ElementProps<CanvasValues>) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sizeInfo, setSizeInfo] = useState(
@@ -29,6 +30,8 @@ export const SvgTypstElement = (({
       render={render}
       pixelPerPt={pixelPerPt}
       setPixelPerPt={setPixelPerPt}
+      state={state}
+      type="svgTypst"
     >
       <div
         ref={containerRef}

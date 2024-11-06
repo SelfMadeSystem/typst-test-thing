@@ -4,7 +4,14 @@ import { ElementComponent, ElementProps } from "./Element";
 import { ResizeElement } from "./ResizeElement";
 import { getInitialSizeInfo, ResizeValues } from "./resizeElementTypes";
 
-export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
+export type RectValues = ResizeValues & {
+  strokeWidth: number;
+  strokeColor: string;
+  fillColor: string;
+  rounding: number;
+};
+
+export const RectElement = (({ id, reason, state }: ElementProps<RectValues>) => {
   const { selectedElement, setSelectedElements } = useEditorContext();
 
   const selected = selectedElement === id;
@@ -16,9 +23,26 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
 
   const [sizeInfo, setSizeInfo] = useState(getInitialSizeInfo(reason));
   const { width, height } = sizeInfo;
-  const [lineWidth] = useState(5);
-  const [lineColor] = useState("white");
-  const [rounding] = useState(5);
+  const [strokeWidth] = useState(
+    "values" in reason ? reason.values.strokeWidth : 5
+  );
+  const [strokeColor] = useState(
+    "values" in reason ? reason.values.strokeColor : "#ffffff"
+  );
+  const [fillColor] = useState(
+    "values" in reason ? reason.values.fillColor : "#00000000"
+  );
+  const [rounding] = useState("values" in reason ? reason.values.rounding : 0);
+
+  useEffect(() => {
+    state.current = ["rect", {
+      ...sizeInfo,
+      strokeWidth,
+      strokeColor,
+      fillColor,
+      rounding,
+    }];
+  }, [sizeInfo, strokeWidth, strokeColor, fillColor, rounding, state]);
 
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -50,13 +74,14 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
       sizeInfo={sizeInfo}
       setSizeInfo={setSizeInfo}
       selected={selected}
-      startResizing={true}
+      startResizing={selected && reason.type === "user-place"}
       id={id}
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          border: `${lineWidth}px solid ${lineColor}`,
+          border: `${strokeWidth}px solid ${strokeColor}`,
+          backgroundColor: fillColor,
           borderRadius: rounding,
         }}
       />
@@ -65,7 +90,7 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
           top: -8,
           left: -8,
           width,
-          height: lineWidth,
+          height: strokeWidth,
         }}
         ref={topLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
@@ -73,8 +98,8 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
       <div
         style={{
           top: -8,
-          left: width - 8 - lineWidth,
-          width: lineWidth,
+          left: width - 8 - strokeWidth,
+          width: strokeWidth,
           height,
         }}
         ref={rightLineRef}
@@ -82,10 +107,10 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
       />
       <div
         style={{
-          top: height - 8 - lineWidth,
+          top: height - 8 - strokeWidth,
           left: -8,
           width,
-          height: lineWidth,
+          height: strokeWidth,
         }}
         ref={bottomLineRef}
         className="absolute border-8 border-transparent box-content cursor-move pointer-events-auto"
@@ -94,7 +119,7 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
         style={{
           top: -8,
           left: -8,
-          width: lineWidth,
+          width: strokeWidth,
           height,
         }}
         ref={leftLineRef}
@@ -102,4 +127,4 @@ export const RectElement = (({ id, reason }: ElementProps<ResizeValues>) => {
       />
     </ResizeElement>
   );
-}) satisfies ElementComponent<ResizeValues>;
+}) satisfies ElementComponent<RectValues>;

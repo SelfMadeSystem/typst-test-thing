@@ -10,6 +10,7 @@ export type EditorContextType = {
   removeElement: (id: string) => void;
   selectedTab: EditorTabType;
   setSelectedTab: (tab: EditorTabType) => void;
+  pasteCount: number;
 };
 
 export const EditorContext = createContext<EditorContextType>({
@@ -21,6 +22,7 @@ export const EditorContext = createContext<EditorContextType>({
   removeElement: () => {},
   selectedTab: editorTabs[0],
   setSelectedTab: () => {},
+  pasteCount: 0,
 });
 
 export function useEditorContext() {

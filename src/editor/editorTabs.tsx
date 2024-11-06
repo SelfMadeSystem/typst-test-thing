@@ -11,6 +11,14 @@ export type EditorTabType = {
   icon: string;
 };
 
+export const components = {
+  canvasTypst: CanvasTypstElement,
+  svgTypst: SvgTypstElement,
+  circle: CircleElement,
+  line: LineElement,
+  rect: RectElement,
+};
+
 export const editorTabs: EditorTabType[] = [
   {
     element: CanvasTypstElement,

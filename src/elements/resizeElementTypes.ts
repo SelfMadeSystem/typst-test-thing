@@ -36,8 +36,8 @@ export function getInitialSizeInfo<V extends ResizeValues>(
       };
     case "paste":
       return {
-        x: reason.values.x + 10,
-        y: reason.values.y + 10,
+        x: reason.values.x + 20 * (reason.pasteCount + 1),
+        y: reason.values.y + 20 * (reason.pasteCount + 1),
         width: reason.values.width,
         height: reason.values.height,
         rotation: reason.values.rotation,

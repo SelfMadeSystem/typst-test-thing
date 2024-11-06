@@ -20,14 +20,17 @@ export const TypstElement = ({
   setPixelPerPt,
   sizeInfo,
   setSizeInfo,
+  state,
+  type,
   children,
 }: PropsWithChildren<
   ElementProps<CanvasValues> & {
-    render: (text: string) => void;
+    render: (text: string) => Promise<void>;
     pixelPerPt: number;
     setPixelPerPt: Dispatch<SetStateAction<number>>;
     sizeInfo: SizeInfo;
     setSizeInfo: Dispatch<SetStateAction<SizeInfo>>;
+    type: string;
   }
 >) => {
   const { selectedElement, setSelectedElements, removeElement } =
@@ -41,14 +44,24 @@ export const TypstElement = ({
   const { width, height } = sizeInfo;
 
   const [text, setText] = useState(getInitialText(reason));
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (reason.type === "user-place") startEditing();
-    startEditing();
+    if (initialized.current) return;
+    initialized.current = true;
+    if (reason.type === "user-place") {
+      startEditing();
+    }
   }, []);
 
+  const rendering = useRef(false);
+
   useEffect(() => {
-    render(text);
+    if (rendering.current) return;
+    rendering.current = true;
+    render(text).finally(() => {
+      rendering.current = false;
+    });
   }, [pixelPerPt, width, height]);
 
   useEffect(() => {
@@ -151,6 +164,10 @@ export const TypstElement = ({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selected, editing, id, removeElement]);
+
+  useEffect(() => {
+    state.current = [type, { ...sizeInfo, text }];
+  }, [sizeInfo, text, state, type]);
 
   return (
     <ResizeElement

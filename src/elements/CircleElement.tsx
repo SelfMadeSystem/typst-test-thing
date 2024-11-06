@@ -4,7 +4,17 @@ import { ElementComponent, ElementProps } from "./Element";
 import { ResizeElement } from "./ResizeElement";
 import { getInitialSizeInfo, ResizeValues } from "./resizeElementTypes";
 
-export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
+export type CircleValues = ResizeValues & {
+  strokeWidth: number;
+  strokeColor: string;
+  fillColor: string;
+};
+
+export const CircleElement = (({
+  id,
+  reason,
+  state,
+}: ElementProps<CircleValues>) => {
   const { selectedElement, setSelectedElements } = useEditorContext();
 
   const selected = selectedElement === id;
@@ -12,8 +22,15 @@ export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [sizeInfo, setSizeInfo] = useState(getInitialSizeInfo(reason));
-  const [lineWidth] = useState(5);
-  const [lineColor] = useState("white");
+  const [strokeWidth] = useState(
+    "values" in reason ? reason.values.strokeWidth : 5
+  );
+  const [strokeColor] = useState(
+    "values" in reason ? reason.values.strokeColor : "#ffffff"
+  );
+  const [fillColor] = useState(
+    "values" in reason ? reason.values.fillColor : "#ff0000aa"
+  );
 
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -30,12 +47,24 @@ export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
     };
   }, [id, setSelectedElements]);
 
+  useEffect(() => {
+    state.current = [
+      "circle",
+      {
+        ...sizeInfo,
+        strokeWidth,
+        strokeColor,
+        fillColor,
+      },
+    ];
+  }, [sizeInfo, strokeWidth, strokeColor, fillColor, state]);
+
   return (
     <ResizeElement
       sizeInfo={sizeInfo}
       setSizeInfo={setSizeInfo}
       selected={selected}
-      startResizing={true}
+      startResizing={selected && reason.type === "user-place"}
       id={id}
     >
       <svg
@@ -48,7 +77,7 @@ export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
           cy="50%"
           rx="50%"
           ry="50%"
-          r={`calc(50% - ${lineWidth / 2}px)`}
+          r={`calc(50% - ${strokeWidth / 2}px)`}
           stroke="transparent"
           strokeWidth={16}
           fill="transparent"
@@ -59,13 +88,15 @@ export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
           cy="50%"
           rx="50%"
           ry="50%"
-          r={`calc(50% - ${lineWidth / 2}px)`}
-          stroke={lineColor}
-          strokeWidth={lineWidth}
-          fill="transparent"
-          style={{ pointerEvents: "stroke" }}
+          r={`calc(50% - ${strokeWidth / 2}px)`}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          fill={fillColor}
+          style={{
+            pointerEvents: fillColor.endsWith("00") ? "stroke" : "auto",
+          }}
         />
       </svg>
     </ResizeElement>
   );
-}) satisfies ElementComponent<ResizeValues>;
+}) satisfies ElementComponent<CircleValues>;

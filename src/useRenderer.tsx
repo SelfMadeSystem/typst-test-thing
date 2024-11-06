@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import type { TypstRenderer, TypstCompiler } from "@myriaddreamin/typst.ts";
 import {
   createTypstRenderer,
@@ -8,12 +8,17 @@ import renderModule from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer
 import compileModule from "@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url";
 import { DiagnosticsData } from "@myriaddreamin/typst.ts/dist/esm/compiler.mjs";
 
-
 const compiler = createTypstCompiler();
 compiler
   .init({
     getModule: () => compileModule,
     beforeBuild: [async () => {}], // apparently this is needed for fonts to load...? idk
+  })
+  .catch(console.error);
+const renderer = createTypstRenderer();
+renderer
+  .init({
+    getModule: () => renderModule,
   })
   .catch(console.error);
 
@@ -30,28 +35,14 @@ export function useRenderer({
     result: Uint8Array | undefined,
     diagnostics: DiagnosticsData["full"][] | undefined
   ) => void;
-}) {
-  const [renderer, setRenderer] = useState<TypstRenderer | null>(null);
+  }) {
   const [pixelPerPt, setPixelPerPt] = useState(2);
-  const isInitialized = useRef(false);
-
-  useEffect(() => {
-    if (!isInitialized.current) {
-      isInitialized.current = true;
-
-      const renderer = createTypstRenderer();
-      renderer
-        .init({
-          getModule: () => renderModule,
-        })
-        .catch(console.error);
-
-      setRenderer(renderer);
-    }
-  }, []);
 
   async function render(text: string) {
-    if (!renderer || !compiler) return;
+    if (!renderer || !compiler) {
+      console.error("Renderer or compiler not initialized");
+      return;
+    }
 
     compiler.addSource(
       "/main.typ",

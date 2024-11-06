@@ -1,14 +1,37 @@
 import { useState, useRef, useEffect } from "react";
 import { useEditorContext } from "../editor/EditorContext";
-import { ElementComponent, ElementProps } from "./Element";
+import { CreateReason, ElementComponent, ElementProps } from "./Element";
 import { Vec2 } from "../utils";
 
 export type LineValues = {
   start: Vec2;
   end: Vec2;
+  lineWidth: number;
+  lineColor: string;
 };
 
-export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
+function getInitial(
+  reason: CreateReason<LineValues>,
+  type: "start" | "end"
+): Vec2 {
+  switch (reason.type) {
+    case "user-place":
+      return reason.mouse;
+    case "load":
+      return reason.values[type];
+    case "paste":
+      return {
+        x: reason.values[type].x + 20 * (reason.pasteCount + 1),
+        y: reason.values[type].y + 20 * (reason.pasteCount + 1),
+      };
+  }
+}
+
+export const LineElement = (({
+  id,
+  reason,
+  state,
+}: ElementProps<LineValues>) => {
   const { selectedElement, setSelectedElements, removeElement } =
     useEditorContext();
 
@@ -19,16 +42,16 @@ export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
   const startRef = useRef<SVGRectElement>(null);
   const endRef = useRef<SVGRectElement>(null);
 
-  const [start, setStart] = useState(
-    reason.type === "user-place" ? reason.mouse : reason.values.start
-  );
-  const [end, setEnd] = useState(
-    reason.type === "user-place" ? reason.mouse : reason.values.start
-  );
+  const [start, setStart] = useState(getInitial(reason, "start"));
+  const [end, setEnd] = useState(getInitial(reason, "end"));
   const [startStart, setStartStart] = useState(start);
   const [startEnd, setStartEnd] = useState(end);
-  const [lineWidth] = useState(5);
-  const [lineColor] = useState("white");
+  const [lineWidth] = useState(
+    reason.type === "user-place" ? 5 : reason.values.lineWidth
+  );
+  const [lineColor] = useState(
+    reason.type === "user-place" ? "#ffffff" : reason.values.lineColor
+  );
 
   const [dragging, setDragging] = useState<false | "start" | "end" | "line">(
     reason.type === "user-place" ? "end" : false
@@ -199,6 +222,10 @@ export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   });
+
+  useEffect(() => {
+    state.current = ["line", { start, end, lineWidth, lineColor }];
+  }, [state, start, end, lineWidth, lineColor]);
 
   return (
     <svg

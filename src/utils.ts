@@ -10,6 +10,10 @@ export function mod(n: number, m: number) {
   return ((n % m) + m) % m;
 }
 
+export function createId() {
+  return Math.random().toString(36).substring(2);
+}
+
 /**
  * Draw text on canvas with word wrapping.
  * 

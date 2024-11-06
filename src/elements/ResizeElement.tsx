@@ -459,7 +459,7 @@ export function ResizeElement({
         element?.removeEventListener("mousedown", onMouseDown)
       );
     };
-  }, [editing, id, removeElement, selected]);
+  }, [editing, id, selected]);
 
   return (
     <>

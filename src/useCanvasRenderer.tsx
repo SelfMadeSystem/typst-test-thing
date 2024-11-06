@@ -35,6 +35,7 @@ export function useCanvasRenderer({
     result: Uint8Array | undefined,
     diagnostics: DiagnosticsData["full"][] | undefined
   ) {
+    console.log("Rendering", result, diagnostics);
     const ctx = offscreenCanvas.current!.getContext("2d")!;
     ctx.clearRect(0, 0, width, height);
     if (result) {

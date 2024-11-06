@@ -8,6 +8,7 @@ import { TypstElement } from "./TypstElement";
 export const CanvasTypstElement = (({
   id,
   reason,
+  state,
 }: ElementProps<CanvasValues>) => {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [sizeInfo, setSizeInfo] = useState(
@@ -29,6 +30,8 @@ export const CanvasTypstElement = (({
       render={render}
       pixelPerPt={pixelPerPt}
       setPixelPerPt={setPixelPerPt}
+      state={state}
+      type="canvasTypst"
     >
       <canvas ref={setCanvas} width={width} height={height} />
     </TypstElement>
