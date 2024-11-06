@@ -1,4 +1,11 @@
-import { useState, useRef, useEffect, PropsWithChildren, Dispatch, SetStateAction } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  PropsWithChildren,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import { useEditorContext } from "../editor/EditorContext";
 import { ElementProps } from "./Element";
 import { ResizeElement } from "./ResizeElement";
@@ -23,10 +30,10 @@ export const TypstElement = ({
     setSizeInfo: Dispatch<SetStateAction<SizeInfo>>;
   }
 >) => {
-  const { selectedElements, setSelectedElements, removeElement } =
+  const { selectedElement, setSelectedElements, removeElement } =
     useEditorContext();
 
-  const selected = selectedElements.includes(id);
+  const selected = selectedElement === id;
 
   const outerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);

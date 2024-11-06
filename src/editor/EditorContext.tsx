@@ -3,6 +3,7 @@ import { editorTabs, EditorTabType } from "./editorTabs";
 
 export type EditorContextType = {
   elements: [string, JSX.Element][];
+  selectedElement: string | null;
   selectedElements: string[];
   setSelectedElements: (id: string[]) => void;
   addElement: (id: string, element: JSX.Element) => void;
@@ -13,6 +14,7 @@ export type EditorContextType = {
 
 export const EditorContext = createContext<EditorContextType>({
   elements: [],
+  selectedElement: null,
   selectedElements: [],
   setSelectedElements: () => {},
   addElement: () => {},

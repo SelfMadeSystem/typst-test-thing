@@ -6,6 +6,7 @@ import { UserPlaceReason } from "../elements/Element";
 
 export function EditorProvider() {
   const [elements, setElements] = useState<[string, JSX.Element][]>([]);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState(editorTabs[0]);
 
@@ -20,11 +21,18 @@ export function EditorProvider() {
   }
 
   function handleSelectElements(ids: string[]) {
-    setSelectedElements(ids);
-
     if (ids.length === 0) {
+      setSelectedElements([]);
+      setSelectedElement(null);
       return;
     }
+
+    if (ids.length === 1) {
+      setSelectedElement(ids[0]);
+      setSelectedElements([]);
+      return;
+    }
+    setSelectedElements(ids);
 
     setElements((elements) => {
       const selectedElements = elements.filter(([id]) => ids.includes(id));
@@ -56,7 +64,8 @@ export function EditorProvider() {
         ...elements,
         [newId, <SelectedElement id={newId} reason={reason} />],
       ]);
-      setSelectedElements([newId]);
+      setSelectedElements([]);
+      setSelectedElement(newId);
     }
 
     window.addEventListener("dblclick", newThing);
@@ -69,6 +78,7 @@ export function EditorProvider() {
   return (
     <EditorContext.Provider
       value={{
+        selectedElement,
         selectedElements,
         setSelectedElements: handleSelectElements,
         elements,

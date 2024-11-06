@@ -5,9 +5,9 @@ import { ResizeElement } from "./ResizeElement";
 import { getInitialSizeInfo, ResizeValues } from "./resizeElementTypes";
 
 export const CircleElement = (({ id, reason }: ElementProps<ResizeValues>) => {
-  const { selectedElements, setSelectedElements } = useEditorContext();
+  const { selectedElement, setSelectedElements } = useEditorContext();
 
-  const selected = selectedElements.includes(id);
+  const selected = selectedElement === id;
 
   const svgRef = useRef<SVGSVGElement>(null);
 

@@ -9,10 +9,10 @@ export type LineValues = {
 };
 
 export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
-  const { selectedElements, setSelectedElements, removeElement } =
+  const { selectedElement, setSelectedElements, removeElement } =
     useEditorContext();
 
-  const selected = selectedElements.includes(id);
+  const selected = selectedElement === id;
 
   const svgRef = useRef<SVGSVGElement>(null);
   const lineRef = useRef<SVGLineElement>(null);
@@ -118,12 +118,7 @@ export const LineElement = (({ id, reason }: ElementProps<LineValues>) => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [
-    dragging,
-    mouseStart,
-    startEnd,
-    startStart,
-  ]);
+  }, [dragging, mouseStart, startEnd, startStart]);
 
   useEffect(() => {
     function startDrag(
