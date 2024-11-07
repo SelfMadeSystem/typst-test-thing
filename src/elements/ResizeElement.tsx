@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useEditorContext } from "../editor/EditorContext";
+import { ElementId, useEditorContext } from "../editor/EditorContext";
 import { mod, } from "../utils";
 import { SizeInfo } from "./resizeElementTypes";
 
@@ -29,7 +29,7 @@ export function ResizeElement({
   editing?: boolean;
   alwaysSelectable?: boolean;
   startResizing?: boolean;
-  id: string;
+  id: ElementId;
 }>) {
   const { removeElement } = useEditorContext();
   const boxRef = useRef<HTMLDivElement | null>(null);
