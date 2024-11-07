@@ -21,7 +21,6 @@ export const TypstElement = ({
   sizeInfo,
   setSizeInfo,
   state,
-  type,
   children,
 }: PropsWithChildren<
   ElementProps<CanvasValues> & {
@@ -30,7 +29,6 @@ export const TypstElement = ({
     setPixelPerPt: Dispatch<SetStateAction<number>>;
     sizeInfo: SizeInfo;
     setSizeInfo: Dispatch<SetStateAction<SizeInfo>>;
-    type: string;
   }
 >) => {
   const { selectedElement, setSelectedElements, removeElement } =
@@ -166,8 +164,8 @@ export const TypstElement = ({
   }, [selected, editing, id, removeElement]);
 
   useEffect(() => {
-    state.current = [type, { ...sizeInfo, text }];
-  }, [sizeInfo, text, state, type]);
+    state.current = { ...sizeInfo, text };
+  }, [sizeInfo, text, state]);
 
   return (
     <ResizeElement

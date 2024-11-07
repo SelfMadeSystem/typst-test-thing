@@ -35,13 +35,13 @@ export const RectElement = (({ id, reason, state }: ElementProps<RectValues>) =>
   const [rounding] = useState("values" in reason ? reason.values.rounding : 0);
 
   useEffect(() => {
-    state.current = ["rect", {
+    state.current = {
       ...sizeInfo,
       strokeWidth,
       strokeColor,
       fillColor,
       rounding,
-    }];
+    };
   }, [sizeInfo, strokeWidth, strokeColor, fillColor, rounding, state]);
 
   useEffect(() => {

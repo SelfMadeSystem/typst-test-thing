@@ -224,7 +224,7 @@ export const LineElement = (({
   });
 
   useEffect(() => {
-    state.current = ["line", { start, end, lineWidth, lineColor }];
+    state.current = { start, end, lineWidth, lineColor };
   }, [state, start, end, lineWidth, lineColor]);
 
   return (

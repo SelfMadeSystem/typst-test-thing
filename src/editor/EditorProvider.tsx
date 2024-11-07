@@ -1,6 +1,7 @@
-import { EditorContext } from "./EditorContext";
+import { EditorContext, ElementId } from "./EditorContext";
 import {
   createRef,
+  Fragment,
   MutableRefObject,
   useEffect,
   useRef,
@@ -8,32 +9,46 @@ import {
 } from "react";
 import { components, editorTabs } from "./editorTabs";
 import { EditorTabs } from "./EditorTab";
-import { PasteReason, UserPlaceReason } from "../elements/Element";
-import { createId } from "../utils";
+import {
+  ElementState,
+  PasteReason,
+  UserPlaceReason,
+} from "../elements/Element";
 import { EditorEvent, EventContext } from "./EventContext";
 
 export function EditorProvider() {
-  const [elements, setElements] = useState<[string, JSX.Element][]>([]);
-  const elementStateRef = useRef<
-    Record<string, MutableRefObject<[string, never]>>
-  >({});
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  const [selectedElements, setSelectedElements] = useState<string[]>([]);
+  const count = useRef(0);
+  const [elements, setElements] = useState<[ElementId, JSX.Element][]>([]);
+  const elementStateById = useRef(
+    new Map<ElementId, [string, MutableRefObject<ElementState>]>()
+  );
+  const [selectedElement, setSelectedElement] = useState<ElementId | null>(null);
+  const [selectedElements, setSelectedElements] = useState<ElementId[]>([]);
   const [selectedTab, setSelectedTab] = useState(editorTabs[0]);
   const [event, setEvent] = useState<EditorEvent | null>(null);
   const [pasteCount, setPasteCount] = useState(0);
 
-  function addElement(id: string, element: JSX.Element) {
-    setElements((elements) => [...elements, [id, element]]);
+  function createId() {
+    return count.current++;
   }
 
-  function removeElement(id: string) {
+  function removeElement(id: ElementId) {
+    console.log("removeElement", id);
     setElements((elements) =>
       elements.filter(([elementId]) => elementId !== id)
     );
+    elementStateById.current.delete(id);
+
+    if (selectedElement === id) {
+      setSelectedElement(null);
+    }
+
+    setSelectedElements((elements) =>
+      elements.filter((elementId) => elementId !== id)
+    );
   }
 
-  function handleSelectElements(ids: string[]) {
+  function handleSelectElements(ids: ElementId[]) {
     if (ids.length === 0) {
       setSelectedElements([]);
       setSelectedElement(null);
@@ -74,12 +89,12 @@ export function EditorProvider() {
       const copyObject: [string, unknown][] = [];
 
       if (selectedElement) {
-        const state = elementStateRef.current[selectedElement].current;
-        copyObject.push( state);
+        const state = elementStateById.current.get(selectedElement);
+        if (state) copyObject.push([state[0], state[1].current]);
       } else {
         selectedElements.forEach((id) => {
-          const state = elementStateRef.current[id].current;
-          copyObject.push(state);
+          const state = elementStateById.current.get(id);
+          if (state) copyObject.push([state[0], state[1].current]);
         });
       }
 
@@ -98,9 +113,9 @@ export function EditorProvider() {
     function handleElementCreation(event: MouseEvent) {
       event.preventDefault();
       const newId = createId();
-      const { element: SelectedElement } = selectedTab;
+      const { type, element: SelectedElement } = selectedTab;
       const stateRef = createRef<never>() as MutableRefObject<never>;
-      elementStateRef.current[newId] = stateRef;
+      elementStateById.current.set(newId, [type, stateRef]);
       const reason: UserPlaceReason = {
         type: "user-place",
         mouse: { x: event.clientX, y: event.clientY },
@@ -125,16 +140,16 @@ export function EditorProvider() {
       const data = e.clipboardData.getData("text/plain");
       const copyObject = JSON.parse(data) as [string, unknown][];
 
-      const newElements: [string, JSX.Element][] = copyObject
-        .map(([id, values]) => {
-          if (!(id in components)) {
+      const newElements: [ElementId, JSX.Element][] = copyObject
+        .map(([type, values]) => {
+          if (!(type in components)) {
             return null;
           }
 
-          const Element = components[id as keyof typeof components];
+          const Element = components[type as keyof typeof components];
           const newId = createId();
           const stateRef = createRef<never>() as MutableRefObject<never>;
-          elementStateRef.current[newId] = stateRef;
+          elementStateById.current.set(newId, [type, stateRef]);
           const reason: PasteReason<never> = {
             type: "paste",
             values: values as never,
@@ -144,7 +159,7 @@ export function EditorProvider() {
           return [
             newId,
             <Element id={newId} reason={reason} state={stateRef} />,
-          ] satisfies [string, JSX.Element];
+          ] satisfies [ElementId, JSX.Element];
         })
         .filter((element) => element !== null);
 
@@ -169,8 +184,6 @@ export function EditorProvider() {
         selectedElement,
         selectedElements,
         setSelectedElements: handleSelectElements,
-        elements,
-        addElement,
         removeElement,
         selectedTab,
         setSelectedTab,
@@ -185,7 +198,7 @@ export function EditorProvider() {
       >
         <EditorTabs />
         {elements.map(([id, element]) => (
-          <div key={id}>{element}</div>
+          <Fragment key={id}>{element}</Fragment>
         ))}
       </EventContext.Provider>
     </EditorContext.Provider>

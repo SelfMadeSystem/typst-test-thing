@@ -31,7 +31,6 @@ export const SvgTypstElement = (({
       pixelPerPt={pixelPerPt}
       setPixelPerPt={setPixelPerPt}
       state={state}
-      type="svgTypst"
     >
       <div
         ref={containerRef}

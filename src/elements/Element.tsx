@@ -5,6 +5,16 @@ type Val = string | number | boolean | Vec2;
 
 export type ElementValues = Record<string, Val | Val[]>;
 
+export type ElementState = {
+  values: ElementValues;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
 export type UserPlaceReason = {
   type: "user-place";
   mouse: Vec2;
@@ -27,9 +37,9 @@ export type CreateReason<V extends ElementValues> =
   | LoadReason<V>;
 
 export type ElementProps<V extends ElementValues> = {
-  id: string;
+  id: number;
   reason: CreateReason<V>;
-  state: MutableRefObject<[string, V]>;
+  state: MutableRefObject<V>;
 };
 
 export type ElementComponent<V extends ElementValues> = FC<ElementProps<V>>;

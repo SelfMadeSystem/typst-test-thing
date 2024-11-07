@@ -31,7 +31,6 @@ export const CanvasTypstElement = (({
       pixelPerPt={pixelPerPt}
       setPixelPerPt={setPixelPerPt}
       state={state}
-      type="canvasTypst"
     >
       <canvas ref={setCanvas} width={width} height={height} />
     </TypstElement>

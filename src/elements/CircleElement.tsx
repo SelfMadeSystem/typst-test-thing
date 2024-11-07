@@ -48,15 +48,12 @@ export const CircleElement = (({
   }, [id, setSelectedElements]);
 
   useEffect(() => {
-    state.current = [
-      "circle",
-      {
-        ...sizeInfo,
-        strokeWidth,
-        strokeColor,
-        fillColor,
-      },
-    ];
+    state.current = {
+      ...sizeInfo,
+      strokeWidth,
+      strokeColor,
+      fillColor,
+    };
   }, [sizeInfo, strokeWidth, strokeColor, fillColor, state]);
 
   return (
